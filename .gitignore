@@ -1,0 +1,6 @@
+.terraform
+env
+env-nu
+env_nu
+.env
+*.tfvars
