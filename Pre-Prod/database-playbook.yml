@@ -1,0 +1,64 @@
+- name: Database-deployment
+  hosts: preprod
+  tasks:
+    - name: Install some dependencies
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - lsb-release
+          - gnupg
+          - gpg
+        update_cache: true
+    - name: Add docker signing key
+      ansible.builtin.apt_key:
+        url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+        state: present
+    - name: Add docker repository into sources list
+      ansible.builtin.apt_repository:
+        repo: "deb [arch={{ ansible_architecture }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+    - name: Install Docker
+      ansible.builtin.apt:
+        name:
+          - docker
+          - docker.io
+          - docker-compose
+          - docker-registry
+        update_cache: true
+    - name: Copy the docker-compose.yml for the database to launch later
+      ansible.builtin.copy:
+        dest: "/root"
+        src: ./docker-compose.yml
+        owner: "root"
+        mode: '777'
+    - name: Install mongodb tools
+      ansible.builtin.apt:
+        deb: https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian11-x86_64-100.9.4.deb
+    - name: Copy .env file
+      ansible.builtin.copy:
+        dest: "/root"
+        src: ./.env
+        owner: "root"
+        mode: '777'
+    - name: Create the docker-entrypoint directory
+      ansible.builtin.file:
+        path: "/root/docker-entrypoint-initdb.d/"
+        state: directory
+        mode: '777'
+        owner: "root"
+        group: "root"
+    - name: Copy mongodb init script inside docker-entrypoint directory to create user for morningnews for later
+      ansible.builtin.copy:
+        dest: "/root/docker-entrypoint-initdb.d/"
+        src: ./docker-entrypoint-initdb.d/mongo-init.js
+        owner: "root"
+        mode: '777'
+    - name: Launch docker compose
+      community.docker.docker_compose:
+        project_src: /root
+    - name: Create a Production database copy
+      ansible.builtin.shell: 'mongoexport --uri mongodb+srv://admin:admin@cluster0.yizxoem.mongodb.net/morningnews --collection users --type json --out database.json'
+    - name: Import database to pre-prod 
+      ansible.builtin.shell: 'mongoimport --drop --collection=users "mongodb://admin:admin@localhost:80/morningnews" database.json  --authenticationDatabase admin'

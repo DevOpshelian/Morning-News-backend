@@ -1,3 +1,3 @@
 variable "token" {
-    description = "Linode access token"
+  description = "Linode access token"
 }

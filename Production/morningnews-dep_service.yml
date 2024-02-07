@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: morningnews
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - port: 80
       targetPort: 3000
@@ -15,7 +15,7 @@ kind: Deployment
 metadata:
   name: morningnews
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: morningnews

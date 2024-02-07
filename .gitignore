@@ -4,3 +4,4 @@ env-nu
 env_nu
 .env
 *.tfvars
+*.txt
