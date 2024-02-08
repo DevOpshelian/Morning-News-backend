@@ -11,6 +11,82 @@ provider "linode" {
   token = var.token
 }
 
+resource "linode_firewall" "my_firewall" {
+  label = "pre-prod-firewall"
+
+  inbound {
+    label    = "allow-http"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ports    = "80"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
+
+  inbound {
+    label    = "allow-https"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ports    = "443"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
+  inbound {
+    label    = "allow-ssh"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ports    = "22"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
+  inbound_policy = "DROP"
+
+  outbound {
+    label    = "accept-http"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ports    = "80"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
+
+  outbound {
+    label    = "accept-https"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ports    = "443"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
+  outbound {
+    label    = "accept-ssh"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ports    = "22"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
+  outbound {
+    label    = "accept-udp"
+    action   = "ACCEPT"
+    protocol = "UDP"
+    ports    = "53"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
+  outbound {
+    label    = "accept-mongodb"
+    action   = "ACCEPT"
+    protocol = "tcp"
+    ports    = "27017"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
+  outbound_policy = "DROP"
+
+  linodes = [linode_instance.Pre-Prod_database.id]
+}
+
 resource "linode_instance" "Pre-Prod_database" {
     label = "Pre-Prod_database"
     image = "linode/debian12"
