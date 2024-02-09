@@ -15,7 +15,7 @@ provider "linode" {
 resource "linode_lke_cluster" "lke_cluster" {
   label       = "Production_test"
   k8s_version = "1.28"
-  region      = "eu-central"
+  region      = "fr-par"
 
   pool {
     type  = "g6-standard-1"

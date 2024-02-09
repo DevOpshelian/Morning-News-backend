@@ -90,20 +90,20 @@ resource "linode_firewall" "my_firewall" {
 resource "linode_instance" "Pre-Prod_database" {
     label = "Pre-Prod_database"
     image = "linode/debian12"
-    region = "eu-central"
+    region = "fr-par"
     type = "g6-nanode-1"
     authorized_users = [ "ObadaHaddad" ]
     root_pass = "pre-prod_backend-database"
 
 }
 
-/*resource "linode_lke_cluster" "lke_cluster" {
+resource "linode_lke_cluster" "lke_cluster" {
   label       = "Pre_Production-test"
   k8s_version = "1.28"
-  region      = "eu-central"
+  region      = "fr-par"
 
   pool {
     type  = "g6-standard-1"
-    count = 1
+    count = 3
   }
-}*/
+}
