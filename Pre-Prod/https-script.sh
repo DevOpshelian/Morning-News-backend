@@ -1,5 +1,8 @@
 #!/bin/bash
 export KUBECONFIG=kube-config.yml
+kubectl create secret generic regcred \
+    --from-file=.dockerconfigjson=dockerconfig.json \
+    --type=kubernetes.io/dockerconfigjson
 kubectl create -f morningnews-dep_service.yml
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update

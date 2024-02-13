@@ -6,3 +6,4 @@ env_nu
 *.tfvars
 *.txt
 ansible.cfg
+dockerconfig.json
