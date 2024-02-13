@@ -8,10 +8,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - backendpreprod.obadasoussachaddad.fr
-      secretName: example-tls
+        - testpreprod.obadasoussachaddad.fr
+      secretName: obadasoussachaddad-tls
   rules:
-    - host: backendpreprod.obadasoussachaddad.fr
+    - host: testpreprod.obadasoussachaddad.fr
       http:
         paths:
           - pathType: Prefix

@@ -18,3 +18,8 @@ my-cert-manager cert-manager/cert-manager \
 sleep 5s
 kubectl create -f acme-issuer-prod.yaml
 kubectl create -f morningnews-ingress.yaml --validate=false
+kubectl create namespace monitoring
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+kubectl -n monitoring create secret generic basic-auth --from-file=lke-monitor/auth
+helm install lke-monitor prometheus-community/kube-prometheus-stack -f lke-monitor/values-https-basic-auth.yaml --set grafana.adminPassword=test --namespace monitoring

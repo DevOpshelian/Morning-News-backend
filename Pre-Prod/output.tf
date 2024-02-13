@@ -27,7 +27,7 @@ kind: Service
 metadata:
   name: morningnews
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 80
       targetPort: 3000
@@ -50,7 +50,8 @@ spec:
     spec:
       containers:
         - name: morningnews
-          image: obadahaddad/morningnews
+          image: obadahaddad/morningnews:pre-prod
+          imagePullPolicy: Always
           env:
             - name: CONNECTION_STRING
               value: "mongodb://admin:admin@${local.machine_ip[0]}:80/morningnews"
