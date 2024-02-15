@@ -9,16 +9,16 @@ prometheus:
       nginx.ingress.kubernetes.io/auth-secret: basic-auth
       nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
     hosts:
-      - test.obadasoussachaddad.fr
+      - testprod.obadasoussachaddad.fr
     paths:
       - /prometheus(/|$)(.*)
     tls:
       - secretName: lke-monitor-tls
         hosts:
-          - test.obadasoussachaddad.fr
+          - testprod.obadasoussachaddad.fr
   prometheusSpec:
     routePrefix: /
-    externalUrl: https://test.obadasoussachaddad.fr/prometheus
+    externalUrl: https://testprod.obadasoussachaddad.fr/prometheus
 
   service:
     type: ClusterIP
@@ -37,16 +37,16 @@ grafana:
       nginx.ingress.kubernetes.io/auth-secret: basic-auth
       nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
     hosts:
-      - test.obadasoussachaddad.fr
+      - testprod.obadasoussachaddad.fr
     path: /grafana(/|$)(.*)
     tls:
       - secretName: lke-monitor-tls
         hosts:
-          - test.obadasoussachaddad.fr
+          - testprod.obadasoussachaddad.fr
 
   grafana.ini:
     server:
-      domain: test.obadasoussachaddad.fr
+      domain: testprod.obadasoussachaddad.fr
       root_url: "/grafana"
       enable_gzip: "true"
 
@@ -63,16 +63,16 @@ alertmanager:
       nginx.ingress.kubernetes.io/auth-secret: basic-auth
       nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
     hosts:
-      - test.obadasoussachaddad.fr
+      - testprod.obadasoussachaddad.fr
     paths:
       - /alertmanager(/|$)(.*)
     tls:
       - secretName: lke-monitor-tls
         hosts:
-          - test.obadasoussachaddad.fr
+          - testprod.obadasoussachaddad.fr
   alertmanagersSpec:
     routePrefix: /
-    externalUrl: https://test.obadasoussachaddad.fr/alertmanager
+    externalUrl: https://testprod.obadasoussachaddad.fr/alertmanager
 
 # Disable control plane metrics
 kubeEtcd:

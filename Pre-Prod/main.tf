@@ -22,6 +22,14 @@ resource "linode_firewall" "my_firewall" {
     ipv4     = ["0.0.0.0/0"]
     ipv6     = ["::/0"]
   }
+  inbound {
+    label    = "allow-metric"
+    action   = "ACCEPT"
+    protocol = "TCP"
+    ports    = "9216"
+    ipv4     = ["0.0.0.0/0"]
+    ipv6     = ["::/0"]
+  }
 
   inbound {
     label    = "allow-https"
