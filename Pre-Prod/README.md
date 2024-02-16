@@ -29,7 +29,11 @@ cp ansible.cfg.example ansible.cfg
 export ANSIBLE_CONFIG=ansible.cfg
 ansible-playbook -u root database-playbook.yml --private-key *cheminCleSSHlinode*
 ```
-La machine MongoDB Pré-prod doit maintenant être prete
+Après avoir lancé `ansible-playbook` la première fois, on ne pourra plus se connecter en tant que `root`, donc il faudra légerement changer la commande `ansible-playbook`: 
+```
+ansible-playbook -u admin database-playbook.yml --ask-become-pass --private-key *cheminCleSSHlinode*
+```
+La machine MongoDB Pré-prod doit maintenant être prête
 
 Il suffit de finir avec le script `https-script.sh` pour configurer le Cluster Kubernetes ainsi que son HTTPS et son monitoring
 ```

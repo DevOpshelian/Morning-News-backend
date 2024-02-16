@@ -7,3 +7,5 @@ env_nu
 *.txt
 ansible.cfg
 dockerconfig.json
+test_mongodb/*
+vars.yml

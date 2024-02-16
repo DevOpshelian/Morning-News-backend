@@ -1,6 +1,47 @@
 - name: Database-deployment
   hosts: Pre-Prod_database
+  become: true
+  vars_files:
+    - vars.yml
   tasks:
+    - name: Add and configure the admin user
+      ansible.builtin.user:
+        name: "admin"
+        password: "{{ password | password_hash('sha512', 'salt') }}"
+        append: true
+        groups: sudo
+        shell: /bin/bash
+    - name: Disallow SSH password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+        state: present
+        validate: sshd -t -f %s
+    - name: Disallow SSH password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin no"
+        state: present
+        validate: sshd -t -f %s
+    - name: Restart ssh service to apply config
+      service:
+        name: ssh
+        state: restarted
+    - name: Create the directory if it does not already exist
+      ansible.builtin.file:
+        path: "/home/admin/.ssh"
+        state: directory
+        mode: '700'
+        owner: "admin"
+        group: "admin"
+    - name: Copy ssh key file to target
+      ansible.builtin.copy:
+        dest: "/home/admin/.ssh/authorized_keys"
+        src: ~/.ssh/linode.pub
+        owner: "admin"
+        mode: '600'
     - name: Install some dependencies
       ansible.builtin.apt:
         name:
@@ -31,9 +72,16 @@
           - docker-buildx-plugin 
           - docker-compose-plugin
         update_cache: true
+    - name: Create the docker-entrypoint directory
+      ansible.builtin.file:
+        path: "/home/admin/database/"
+        state: directory
+        mode: '777'
+        owner: "admin"
+        group: "admin"
     - name: Copy the docker-compose.yml for the database to launch later
       ansible.builtin.copy:
-        dest: "/root"
+        dest: "/home/admin/database"
         src: ./docker-compose.yml
         owner: "root"
         mode: '777'
@@ -42,27 +90,27 @@
         deb: https://fastdl.mongodb.org/tools/db/mongodb-database-tools-debian11-x86_64-100.9.4.deb
     - name: Copy .env file
       ansible.builtin.copy:
-        dest: "/root"
+        dest: "/home/admin/database"
         src: ./.env
         owner: "root"
         mode: '777'
     - name: Create the docker-entrypoint directory
       ansible.builtin.file:
-        path: "/root/docker-entrypoint-initdb.d/"
+        path: "/home/admin/database/docker-entrypoint-initdb.d/"
         state: directory
         mode: '777'
-        owner: "root"
-        group: "root"
+        owner: "admin"
+        group: "admin"
     - name: Copy mongodb init script inside docker-entrypoint directory to create user for morningnews for later
       ansible.builtin.copy:
-        dest: "/root/docker-entrypoint-initdb.d/"
+        dest: "/home/admin/database/docker-entrypoint-initdb.d/"
         src: ./docker-entrypoint-initdb.d/mongo-init.js
         owner: "root"
         mode: '777'
     - name: Launch docker compose
       community.docker.docker_compose_v2:
-        project_src: /root
+        project_src: /home/admin/database
     - name: Create a Production database copy
-      ansible.builtin.shell: 'mongoexport --uri mongodb+srv://admin:admin@cluster0.yizxoem.mongodb.net/morningnews --collection users --type json --out database.json'
+      ansible.builtin.shell: 'mongoexport --uri {{ produrl }} --collection users --type json --out database.json'
     - name: Import database to pre-prod 
-      ansible.builtin.shell: 'mongoimport --drop --collection=users "mongodb://admin:admin@localhost:80/morningnews" database.json  --authenticationDatabase admin'
+      ansible.builtin.shell: 'mongoimport --drop --collection=users "{{ preprodurl }}" database.json  --authenticationDatabase admin'
