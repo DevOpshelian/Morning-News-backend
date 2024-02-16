@@ -72,6 +72,11 @@
           - docker-buildx-plugin 
           - docker-compose-plugin
         update_cache: true
+    - name: Add user to docker group
+      ansible.builtin.user:
+        name: admin
+        groups: docker
+        append: true
     - name: Create the docker-entrypoint directory
       ansible.builtin.file:
         path: "/home/admin/database/"
@@ -114,3 +119,59 @@
       ansible.builtin.shell: 'mongoexport --uri {{ produrl }} --collection users --type json --out database.json'
     - name: Import database to pre-prod 
       ansible.builtin.shell: 'mongoimport --drop --collection=users "{{ preprodurl }}" database.json  --authenticationDatabase admin'
+    - name: Download crowdsec repo install script
+      ansible.builtin.get_url: url=https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh dest=/root/crowdsecinstaller.sh mode=0755
+    - name: Execute crowdsec repo install script
+      ansible.builtin.shell: /root/crowdsecinstaller.sh
+    - name: Remove the crowdsec repo install script
+      ansible.builtin.file: path=/root/crowdsecinstaller.sh  state=absent
+    - name: Adds crowdsec package
+      ansible.builtin.apt:
+        name: crowdsec
+        state: present
+    - name: adds crowdsec-firewall-bouncer-iptables package
+      ansible.builtin.apt:
+        name: crowdsec-firewall-bouncer-iptables
+        state: present
+    - name: Check crowdsecurity/whitelist-good-actors
+      ansible.builtin.shell: sudo cscli collections list | grep crowdsecurity/whitelist-good-actors | awk '{print($3)}'
+      register: collectionState
+    - name: install whitelist-good-actors collection
+      ansible.builtin.shell: cscli collections install crowdsecurity/whitelist-good-actors
+      when: collectionState.stdout != "enabled"
+    - name: Restart crowdsec service
+      ansible.builtin.service:
+        name: crowdsec
+        state: restarted
+      when: collectionState.stdout != "enabled"
+    - name: Allow connections on multiple ports
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_ports:          
+          - "80"
+          - "443"
+          - "22"
+          - "53"
+          - "9216"
+        jump: ACCEPT
+    - name: Allow connections on multiple ports
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: tcp
+        destination_ports:
+          - "80"
+          - "443"
+          - "22"
+          - "53"
+          - "27017"
+        jump: ACCEPT
+    - name: Allow related and established connections
+      ansible.builtin.iptables:
+        chain: INPUT
+        ctstate: ESTABLISHED,RELATED
+        jump: ACCEPT
+    - name: Set the policy for the INPUT chain to DROP
+      ansible.builtin.iptables:
+        chain: INPUT
+        policy: DROP

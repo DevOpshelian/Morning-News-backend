@@ -30,7 +30,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: CONNECTION_STRING
-              value: "mongodb://admin:admin@172.232.38.65:80/morningnews"
+              value: "mongodb://admin:admin@172.234.57.17:80/morningnews"
           ports:
             - containerPort: 3000
       imagePullSecrets:

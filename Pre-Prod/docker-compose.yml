@@ -11,3 +11,11 @@ services:
       - 80:27017
     volumes:
       - ./docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+  mongo_exporter:
+    image: percona/mongodb_exporter:0.40.0
+    restart: always
+    environment:
+      - MONGODB_URI=mongodb://admin:admin@localhost:80/morningnews
+    ports:
+      - 9216:9216
+      - 17001:1700

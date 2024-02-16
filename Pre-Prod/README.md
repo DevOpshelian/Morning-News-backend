@@ -24,6 +24,7 @@ terraform apply
 ```
 Une fois la tâche fini, nous allons lancer la commande `ansible-playbook` pour nous permettre d'automatiser le déploiement de la base de donnée MongoDB sur la machine Linode que Terraform vien de créer (en utilisant le fichier host que Terraform nous a construit automatiquement)
 
+Il faut s'assurer d'avoir bien whitelist l'adresse IP sur MongoDB Atlas avant de lancer Ansible pour ne pas avoir de problème pendant la création de la copie de la base de donnée de Production.
 ```
 cp ansible.cfg.example ansible.cfg
 export ANSIBLE_CONFIG=ansible.cfg
