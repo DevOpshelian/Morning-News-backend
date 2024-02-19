@@ -9,3 +9,7 @@ ansible.cfg
 dockerconfig.json
 test_mongodb/*
 vars.yml
+host
+ovh.conf
+config.md
+kube-config.yml
