@@ -1,0 +1,5 @@
+.env
+node_modules/
+sonar-project.properties
+env_nu/
+env/

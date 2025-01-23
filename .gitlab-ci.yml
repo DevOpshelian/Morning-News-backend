@@ -1,0 +1,128 @@
+default:
+  image: node:16.20.2-buster
+
+stages:
+  - build-test
+  - test-image
+  - sonarqube-check
+  - build-pre_prod_test
+  - pre_prod-dep
+  - test-preprod
+  - rollback_preprod
+  - build-pre_prod
+  - build-prod
+  - prod-dep
+
+dockerbuild_main-job:
+  stage: build-test
+  before_script:
+    - docker login $CI_REGISTRY -u ObadaS -p $GITLAB_PAT
+  script:
+    - docker build -t $IMAGE_NAME:${CI_COMMIT_SHORT_SHA} --no-cache --build-arg url=$CONNECTION_STRING --build-arg token=$NEWSTOKEN .
+    - docker push $IMAGE_NAME:${CI_COMMIT_SHORT_SHA}
+  only:
+    - main
+  tags: [dockerfile]
+
+test-eslint-and-jest_job:
+  image: $IMAGE_NAME:${CI_COMMIT_SHORT_SHA}
+  stage: test-image
+  script:
+    - npm install eslint jest
+    - npx eslint modules/ routes/ models/
+    - npm run test
+  only:
+    - main
+
+sonarqube-check:
+  stage: sonarqube-check
+  image:
+    name: sonarsource/sonar-scanner-cli:5.0
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" # Defines the location of the analysis task cache
+    GIT_DEPTH: "0" # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - sonar-scanner
+  only:
+    - main
+
+dockerbuild_pre_prod_test-job:
+  stage: build-pre_prod_test
+  before_script:
+    - docker login $CI_REGISTRY -u ObadaS -p $GITLAB_PAT
+  script:
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA --no-cache --build-arg url=$CONNECTION_STRING --build-arg token=$NEWSTOKEN .
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+  only:
+    - pre-prod
+  tags: [dockerfile]
+
+kubectl_pre_prod-job:
+  stage: pre_prod-dep
+  script:
+    - echo $KUBECONFIGPREPROD > kube-config.json
+    - yq -p json -o yaml kube-config.json > kube-config.yaml
+    - kubectl --kubeconfig kube-config.yaml set image deployment/morningnews morningnews=$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - sleep 30s
+  only:
+    - pre-prod
+  tags: [dockerfile]
+
+locust-job:
+  image: python:latest
+  stage: test-preprod
+  script:
+    - pip3 install locust
+    - locust --headless --users 100 --spawn-rate 1 -H https://testpreprod.obadasoussachaddad.fr/ -t 15s --only-summary
+  only:
+    - pre-prod
+
+kubectl_pre_prod_rollback-job:
+  stage: rollback_preprod
+  script:
+    - echo $KUBECONFIGPREPROD > kube-config.json
+    - yq -p json -o yaml kube-config.json > kube-config.yaml
+    - kubectl --kubeconfig kube-config.yaml set image deployment/morningnews morningnews=$IMAGE_NAME:pre-prod
+  only:
+    - pre-prod
+  tags: [dockerfile]
+  when: on_failure
+
+dockerbuild_pre_prod-job:
+  stage: build-pre_prod
+  before_script:
+    - docker login $CI_REGISTRY -u ObadaS -p $GITLAB_PAT
+  script:
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHORT_SHA $IMAGE_NAME:pre-prod
+    - docker push $IMAGE_NAME:pre-prod
+  only:
+    - pre-prod
+  tags: [dockerfile]
+  when: on_success
+
+dockerbuild_prod-job:
+  stage: build-prod
+  before_script:
+    - docker login -u $DOCKER_REGISTRY_USER  -p $DOCKER_PAT
+
+  script:
+    - docker build -t obadahaddad/morningnews:prod --no-cache --build-arg url=$CONNECTION_STRING --build-arg token=$NEWSTOKEN .
+    - docker push obadahaddad/morningnews:prod
+  only:
+    - prod
+  tags: [dockerfile]
+
+kubectl_prod-job:
+  stage: prod-dep
+  script:
+    - echo $KUBECONFIGPROD > kube-config.json
+    - yq -p json -o yaml kube-config.json > kube-config.yaml
+    - kubectl --kubeconfig kube-config.yaml rollout restart deployment morningnews
+  only:
+    - prod
+  tags: [dockerfile]
